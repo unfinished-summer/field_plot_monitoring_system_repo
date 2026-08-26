@@ -325,7 +325,7 @@ function GameLoop(timestamp) {
         surviveSecond = playSec; // 实时记录当前时长
     } else {
         timeText.innerText = surviveSecond; // 游戏暂停或结束时显示最后存活时长
-    } s
+    } 
     Draw(timestamp); // 每帧都绘制画面
 }
 
