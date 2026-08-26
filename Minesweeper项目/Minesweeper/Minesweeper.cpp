@@ -192,12 +192,12 @@ int Play(int Map[ROW + 2][COL + 2]) {
 		case WM_RBUTTONDOWN: // 补全右键插旗逻辑
 		{
 			int v = Map[row][col];
-			if (v >= 10) break; // 已翻开格子，禁止插旗
 			if (v >= 19)
 				Map[row][col] -= 20; // 取消旗子
 			else
 				Map[row][col] += 20; // 插上旗子
 			break;
+			if (v >= 10) break; // 已翻开格子，禁止插旗
 		}
 		}
 	}
