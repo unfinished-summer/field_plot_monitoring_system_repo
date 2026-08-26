@@ -281,6 +281,9 @@ document.addEventListener("keydown", (e) => {
     if (e.key.toLowerCase() === 'r') {
         Setup();
         soundReset(); // 重启音效
+        surviveSecond = 0;
+        startTime = 0;
+        timeText.innerText = "0";
         return;
     }
     if (gameOver) return;
