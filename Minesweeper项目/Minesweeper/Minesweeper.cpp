@@ -118,7 +118,7 @@ void DrawMap(int Map[ROW + 2][COL + 2], IMAGE* img) {
 				continue;
 			}
 			// 第二优先级：插旗
-			if (val >= 20) {
+			if (val >= 19) {
 				putimage((j - 1) * CELL_SIZE, (i - 1) * CELL_SIZE, &img[11]);
 				continue;
 			}
@@ -132,22 +132,33 @@ void DrawMap(int Map[ROW + 2][COL + 2], IMAGE* img) {
 				putimage((j - 1) * CELL_SIZE, (i - 1) * CELL_SIZE, &img[10]);
 				continue;
 			}
-			// 已翻开：减去10得到0~8
-			int num = val - 10;
-			switch (num) {
-			case 0:putimage((j-1)*CELL_SIZE,(i-1)*CELL_SIZE, &img[0]);break;
-			case 1:putimage((j-1)*CELL_SIZE,(i-1)*CELL_SIZE, &img[1]);break;
-			case 2:putimage((j-1)*CELL_SIZE,(i-1)*CELL_SIZE, &img[2]);break;
-			case 3:putimage((j-1)*CELL_SIZE,(i-1)*CELL_SIZE, &img[3]);break;
-			case 4:putimage((j-1)*CELL_SIZE,(i-1)*CELL_SIZE, &img[4]);break;
-			case 5:putimage((j-1)*CELL_SIZE,(i-1)*CELL_SIZE, &img[5]);break;
-			case 6:putimage((j-1)*CELL_SIZE,(i-1)*CELL_SIZE, &img[6]);break;
-			case 7:putimage((j-1)*CELL_SIZE,(i-1)*CELL_SIZE, &img[7]);break;
-			case 8:putimage((j-1)*CELL_SIZE,(i-1)*CELL_SIZE, &img[8]);break;
+			// 已翻开
+			switch (val) {
+			case 10:putimage((j-1)*CELL_SIZE,(i-1)*CELL_SIZE, &img[0]);break;
+			case 11:putimage((j-1)*CELL_SIZE,(i-1)*CELL_SIZE, &img[1]);break;
+			case 12:putimage((j-1)*CELL_SIZE,(i-1)*CELL_SIZE, &img[2]);break;
+			case 13:putimage((j-1)*CELL_SIZE,(i-1)*CELL_SIZE, &img[3]);break;
+			case 14:putimage((j-1)*CELL_SIZE,(i-1)*CELL_SIZE, &img[4]);break;
+			case 15:putimage((j-1)*CELL_SIZE,(i-1)*CELL_SIZE, &img[5]);break;
+			case 16:putimage((j-1)*CELL_SIZE,(i-1)*CELL_SIZE, &img[6]);break;
+			case 17:putimage((j-1)*CELL_SIZE,(i-1)*CELL_SIZE, &img[7]);break;
+			case 18:putimage((j-1)*CELL_SIZE,(i-1)*CELL_SIZE, &img[8]);break;
 			default:putimage((j - 1) * CELL_SIZE, (i - 1) * CELL_SIZE, &img[10]);
 			}
 		}
 	}
+	// ========== 控制台打印整张地图 ==========
+	system("cls"); // 清空控制台，避免刷屏堆积
+	printf("===== 扫雷地图实时数值(ROW:行,COL:列) =====\n");
+	for (int i = 1; i <= ROW; i++)
+	{
+		for (int j = 1; j <= COL; j++)
+		{
+			printf("%3d ", Map[i][j]); // %3d 对齐排版
+		}
+		printf("\n");
+	}
+	printf("==========================================\n");
 }
 int Play(int Map[ROW + 2][COL + 2]) {
 	MOUSEMSG msg;
@@ -164,13 +175,14 @@ int Play(int Map[ROW + 2][COL + 2]) {
 		{
 			int v = Map[row][col];
 			// 已翻开 / 插旗 不能点击
-			if (v >= 10 || v >= 20) break;
+			if (v >= 19) break;  // 插旗格子，禁止左键点击
+			if (v >= 10) break;  // 已翻开格子，禁止左键点击
 			// 踩到地雷，返回失败1
 			if (v == -1) {
 				// 全部地雷暴露
 				for (int i = 1; i <= ROW; i++)
 					for (int j = 1; j <= COL; j++)
-						if (Map[i][j] == -1) Map[i][j] = -10;
+						if (Map[i][j] == -1 || Map[i][j] == 19) Map[i][j] = -10;
 				return 1;
 			}
 			// 递归展开空白区域
@@ -180,8 +192,8 @@ int Play(int Map[ROW + 2][COL + 2]) {
 		case WM_RBUTTONDOWN: // 补全右键插旗逻辑
 		{
 			int v = Map[row][col];
-			if (v >= 10) break; // 已翻开不能插旗
-			if (v >= 20)
+			if (v >= 10) break; // 已翻开格子，禁止插旗
+			if (v >= 19)
 				Map[row][col] -= 20; // 取消旗子
 			else
 				Map[row][col] += 20; // 插上旗子
