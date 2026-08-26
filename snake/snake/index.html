@@ -1,0 +1,55 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>贪吃蛇</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #104c4c;
+            color: #fff;
+            padding-top: 30px;
+            font-family: "Microsoft Yahei", sans-serif;
+        }
+
+        .game-panel {
+            border-top: 4px solid #eeeeee;
+            border-left: 4px solid #eeeeee;
+            border-right: 4px solid #222222;
+            border-bottom: 4px solid #222222;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.45);
+        }
+
+        #gameCanvas {
+            border: none;
+            background: #000;
+        }
+
+        .info {
+            margin-top: 12px;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-panel">
+        <canvas id="gameCanvas"></canvas>
+    </div>
+
+
+    <div class="info">
+        分数：<span id="score">0</span> |时间：<span id="time">0</span>| WASD / 方向键移动 | R 重新开始
+    </div>
+
+    <script src="snake.js"></script>
+</body>
+</html>

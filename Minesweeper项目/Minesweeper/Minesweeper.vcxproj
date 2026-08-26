@@ -25,7 +25,7 @@
     <VCProjectVersion>18.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
     <ProjectGuid>{22e45637-0a05-423e-85e1-8cd3dfc79edb}</ProjectGuid>
-    <RootNamespace>Project1</RootNamespace>
+    <RootNamespace>Minesweeper</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <ProjectName>Minesweeper</ProjectName>
   </PropertyGroup>
