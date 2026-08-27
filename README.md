@@ -66,4 +66,4 @@ Demos
 
 ## License
 
-仅供个人学习练习使用。
+本项目采用MIT开源许可证，详见LICENSE文件。
