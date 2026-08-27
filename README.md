@@ -40,7 +40,7 @@ Demos
 
 ### 1. Minesweeper 项目
 
-1. 使用 Visual Studio 2022 打开项目工程文件（`.sln` / `.vcxproj`）
+1. 使用 Visual Studio 2026 打开项目工程文件（`.sln` / `.vcxproj`）
 2. 配置 EasyX 图形库（头文件与库文件路径）
 3. 选择「本地 Windows 调试器」编译运行
 
@@ -51,13 +51,13 @@ Demos
 
 ### 3. 田块检查系统项目
 
-1. 使用 Visual Studio 2022 打开项目工程文件（`.sln` / `.vcxproj`）
+1. 使用 Visual Studio 2026 打开项目工程文件（`.sln` / `.vcxproj`）
 2. 无需额外第三方库，直接编译
 3. 运行后在控制台按菜单提示进行田块信息的录入、查询、修改、删除等操作
 
 ## 💻 开发环境
 
-- Visual Studio 2022
+- Visual Studio 2026
 - VS Code
 
 ## License
