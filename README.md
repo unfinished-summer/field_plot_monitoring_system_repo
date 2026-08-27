@@ -40,11 +40,13 @@ Demos
 
 ### 1. Minesweeper 项目
 
+- 方式一：
 1. 配置 EasyX 图形库（头文件与库文件路径）
 2. 使用 Visual Studio 2026 打开项目工程文件（`.sln` / `.vcxproj`）
 3. 平台切换  x64 Debug 
 4. 右键解决方案 → 重新生成解决方案
 5. F5运行游戏
+- 方式二：直接双击打开exe文件
 
 ### 2. snake
 
