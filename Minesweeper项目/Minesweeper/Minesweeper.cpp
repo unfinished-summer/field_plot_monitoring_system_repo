@@ -8,6 +8,7 @@ const int MINE_COUNT = 12;
 const int CELL_SIZE = 50;
 HWND hwnd;
 int openCellCnt;
+IMAGE img[12];
 
 void Game();
 void DrawMap(int Map[ROW + 2][COL + 2], IMAGE* img);
@@ -55,7 +56,7 @@ void Game() {
 			}
 		}
 	}
-	IMAGE img[12];
+	
 
 	loadimage(&img[0], L"D:\\36779\\Pictures\\0.png", CELL_SIZE, CELL_SIZE);
 	loadimage(&img[1], L"D:\\36779\\Pictures\\1.png", CELL_SIZE, CELL_SIZE);
