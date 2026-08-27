@@ -67,7 +67,7 @@ Minesweeper
 
 **【排查与原因】**：EasyX 官方库面向 MSVC（Visual Studio），并不原生支持 MinGW；头文件、库路径配置错误，同时混淆 gcc/g++ 编译器，`.c` 源码无法编译库内 C++ 特性代码。
 
-**【解决方案】**：放弃 MinGW + VSCode 环境，切换至 Visual Studio 2022，安装官方 EasyX 包，规避 MinGW 移植带来的兼容性问题。
+**【解决方案】**：放弃 MinGW + VSCode 环境，切换至 Visual Studio 2026，安装官方 EasyX 包，规避 MinGW 移植带来的兼容性问题。
 
 **【经验总结】**：第三方图形库需要和编译器严格匹配，环境配置问题会消耗大量开发时间，工具选型十分重要；要分清编译阶段与链接阶段的不同错误。
 
