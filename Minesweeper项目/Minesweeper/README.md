@@ -38,6 +38,7 @@ EasyX只支持Windows
 必须将仓库内 `res` 完整资源文件夹，与 `Minesweeper.exe` 放在同一目录，否则贴图加载失败，程序窗口直接闪退。
 
 ## 项目目录结构
+```
 Minesweeper
 ├─ res                  # 贴图资源文件夹，完整提交至 Git 仓库
 │  ├─ 0.png ~ 8.png     # 数字 0~8 格子贴图
@@ -47,7 +48,7 @@ Minesweeper
 ├─ Minesweeper.cpp      # 全部游戏主逻辑代码
 ├─ Minesweeper.vcxproj  # VS 项目配置（自动拷贝 res 资源脚本内置）
 └─ Minesweeper.sln     # VS 解决方案文件
-
+```
 ## 问题一：程序随机崩溃
 
 **【问题】**：无编译报错，程序运行过程随机崩溃退出。
