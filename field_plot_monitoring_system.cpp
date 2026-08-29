@@ -8,6 +8,9 @@
 #define HUMI_MAX 85.0f   // 湿度上限
 #define HUMI_MIN 40.0f   // 湿度下限
 #define CONTINUOUS_ABNORMAL_THRESHOLD 3
+#define RECORD_ARRAY_MAX 100
+#define TREND_CHANGE_THRESHOLD 0.5f
+#define MENU_LINE_WIDTH 40
 
 
 //数据结构定义
@@ -62,6 +65,22 @@ typedef enum {
 static MonitorSystem* g_sys = NULL;
 void check_continuous_abnormal_alerts(MonitorSystem* sys, int field_id);
 //函数功能实现
+// 打印菜单分隔线，统一宽度
+static void print_menu_separator(void)
+{
+    for (int i = 0; i < MENU_LINE_WIDTH; i++)
+    {
+        printf("=");
+    }
+    printf("\n");
+}
+// 打印居中标题
+static void print_center_title(const char* title)
+{
+    int space_cnt = (MENU_LINE_WIDTH - strlen(title)) / 2;
+    for (int i = 0; i < space_cnt; i++) printf(" ");
+    printf("%s\n", title);
+}
 //系统管理函数
 MonitorSystem* create_monitor_system(void){
 	//创建系统
@@ -127,17 +146,16 @@ void destroy_monitor_system(MonitorSystem* sys){
 	sys=NULL;
 }
 void display_main_menu(void){
-	for(int i=40;i>=0;i--){printf("=");}printf("\n");
-	for(int i=8;i>=0;i--){printf(" ");}
-	printf("校园实验田环境监测系统\n");
-	for(int i=40;i>=0;i--){printf("=");}printf("\n");
+    print_menu_separator();
+    print_center_title("校园实验田环境监测系统");
+    print_menu_separator();
 	printf("1.实验田管理\n");
 	printf("2.传感器数据管理\n");
 	printf("3.数据查询与统计\n");
 	printf("4.告警管理\n");
 	printf("5.系统信息\n");
 	printf("0.退出系统\n");
-	for(int i=40;i>=0;i--){printf("=");}printf("\n");
+    print_menu_separator();
 	printf("请选择操作(0-5):");
 }
 void expand_field_array(MonitorSystem* sys){
@@ -183,16 +201,15 @@ void display_all_fields(MonitorSystem* sys){
 		perror("Failed to allocate MonitorSystem");
 		return ;
 		}	
-	for(int i=40;i>=0;i--){printf("=");}printf("\n");
-		for(int i=8;i>=0;i--){printf(" ");}
-		printf("所有实验田块\n");
-		for(int i=40;i>=0;i--){printf("=");}printf("\n");
+        print_menu_separator();
+        print_center_title("所有实验田块");
+        print_menu_separator();
 		printf("ID     名 称         负责人     传感器数\n");
-		for(int i=40;i>=0;i--){printf("-");}printf("\n");
+        print_menu_separator();
 		for(int i=0;i<sys->field_count;i++){
 			printf("%d.   %s    %s         %d\n",sys->fields[i]->id,sys->fields[i]->name,sys->fields[i]->manager,sys->fields[i]->sensor_count);
 		}
-		for(int i=40;i>=0;i--){printf("=");}printf("\n");
+        print_menu_separator();
 }
 Field* find_field_by_id(MonitorSystem* sys,int field_id){
 	
@@ -380,29 +397,29 @@ int add_sensor_record(MonitorSystem* sys,int field_id,float temperature,float hu
 		return -1;
 	}
 	
-	SensorRecord* new_SensorRecord=(SensorRecord*)malloc(sizeof(SensorRecord));
-	if(new_SensorRecord==NULL){
+	SensorRecord* new_sensor_record=(SensorRecord*)malloc(sizeof(SensorRecord));
+	if(new_sensor_record==NULL){
 		perror("malloc SensorRecord失败");
 		return -1;
 	}
-	new_SensorRecord->field_id=field_id;
-	new_SensorRecord->temperature=temperature;
-	new_SensorRecord->humidity=humidity;
+	new_sensor_record->field_id=field_id;
+	new_sensor_record->temperature=temperature;
+	new_sensor_record->humidity=humidity;
 	time_t now =time(NULL);
 	struct tm* tm_info=localtime(&now);
-	strftime(new_SensorRecord->timestamp,sizeof(new_SensorRecord->timestamp),"%Y-%m-%d %H:%M", tm_info);
-	new_SensorRecord->is_abnormal=0;
+	strftime(new_sensor_record->timestamp,sizeof(new_sensor_record->timestamp),"%Y-%m-%d %H:%M", tm_info);
+	new_sensor_record->is_abnormal=0;
 	if (temperature < 10 || temperature > 35 || humidity < 40 || humidity > 85){
-		new_SensorRecord->is_abnormal=1;
+		new_sensor_record->is_abnormal=1;
 		printf("温湿度异常！已标记该记录，将自动生成告警\n");
 	} 
 	//链表头插法
-	new_SensorRecord->next=sys->record_head;//新节点指向原来的第一个节点
-	sys->record_head=new_SensorRecord;//头节点指向新节点
+	new_sensor_record->next=sys->record_head;//新节点指向原来的第一个节点
+	sys->record_head=new_sensor_record;//头节点指向新节点
 	printf("添加记录成功\n");
 	printf("时间：%s | 田块ID：%d | 温度：%.1f℃ | 湿度：%.1f%% | 状态：%s\n",
-	        new_SensorRecord->timestamp, field_id, temperature, humidity,
-	        new_SensorRecord->is_abnormal ? "异常" : "正常");
+	        new_sensor_record->timestamp, field_id, temperature, humidity,
+	        new_sensor_record->is_abnormal ? "异常" : "正常");
 	check_continuous_abnormal_alerts(sys, field_id);
 	return 0;
 }
@@ -1316,10 +1333,9 @@ int get_alert_count(MonitorSystem* sys,int field_id){
 }
 //辅助函数
 void display_field_menu(void) {
-    for(int i=40;i>=0;i--){printf("=");}printf("\n");
-    for(int i=5;i>=0;i--){printf(" ");}
-    printf("实验田管理\n");
-    for(int i=40;i>=0;i--){printf("=");}printf("\n");
+    print_menu_separator();
+    print_center_title("实验田管理");
+    print_menu_separator();
     printf("1. 添加新田块\n");
     printf("2. 显示所有田块\n");
     printf("3. 查找田块(按ID)\n");
@@ -1327,7 +1343,7 @@ void display_field_menu(void) {
     printf("5. 搜索田块(按负责人)\n");
     printf("6. 删除田块\n");
     printf("0. 返回主菜单\n");
-    for(int i=40;i>=0;i--){printf("=");}printf("\n");
+    print_menu_separator();
     printf("请选择(0-6):");
 }
 void field_management(void){
@@ -1406,10 +1422,9 @@ void field_management(void){
 	}   
 }
 void display_sensor_record_menu(void){
-	for(int i=40;i>=0;i--){printf("=");}printf("\n");
-    for(int i=5;i>=0;i--){printf(" ");}
-    printf("传感器管理\n");
-    for(int i=40;i>=0;i--){printf("=");}printf("\n");
+    print_menu_separator();
+    print_center_title("传感器管理");
+    print_menu_separator();
     printf("1. 添加传感器记录 \n");
     printf("2. 显示最新记录\n");
     printf("3. 显示所有记录 \n");
@@ -1417,7 +1432,7 @@ void display_sensor_record_menu(void){
     printf("5. 获取记录数量\n");
     printf("6. 计算平均温度\n");
     printf("0. 返回主菜单\n");
-    for(int i=40;i>=0;i--){printf("=");}printf("\n");
+    print_menu_separator();
     printf("请选择(0-6):");
 }
 void sensor_record_management(void){
@@ -1496,15 +1511,14 @@ void sensor_record_management(void){
 	}
 }
 void display_data_query(void){
-		for(int i=40;i>=0;i--){printf("=");}printf("\n");
-	    for(int i=5;i>=0;i--){printf(" ");}
-	    printf("数据查询与统计\n");
-	    for(int i=40;i>=0;i--){printf("=");}printf("\n");
+		print_menu_separator();
+        print_center_title("数据查询与统计");
+	    print_menu_separator();
 	    printf("1. 查找异常记录 \n");
 	    printf("2. 查找极值\n");
 	    printf("3. 分析趋势 \n");
 	    printf("0. 返回主菜单\n");
-	    for(int i=40;i>=0;i--){printf("=");}printf("\n");
+	    print_menu_separator();
 	    printf("请选择(0-3):");
 }
 void data_management(void){
@@ -1548,18 +1562,17 @@ void data_management(void){
 	}
 }
 void display_alert(void){
-	for(int i=40;i>=0;i--){printf("=");}printf("\n");
-	    for(int i=5;i>=0;i--){printf(" ");}
-		printf("告警管理\n");
-		for(int i=40;i>=0;i--){printf("=");}printf("\n");
-		printf("1. 检查并生成告警 \n");
-		printf("2. 显示所有告警\n");
-		printf("3. 处理告警 \n");
-		printf("4. 统计告警数量 \n");
-		printf("5. 显示连续告警\n");
-		printf("0. 返回主菜单\n");
-		for(int i=40;i>=0;i--){printf("=");}printf("\n");
-		printf("请选择(0-4):");
+	print_menu_separator();
+    print_center_title("告警管理");
+	print_menu_separator();
+	printf("1. 检查并生成告警 \n");
+	printf("2. 显示所有告警\n");
+	printf("3. 处理告警 \n");
+	printf("4. 统计告警数量 \n");
+	printf("5. 显示连续告警\n");
+	printf("0. 返回主菜单\n");
+	print_menu_separator();
+	printf("请选择(0-4):");
 }
 void alert_management(void){
 	int sub_choice;
@@ -1615,16 +1628,15 @@ void alert_management(void){
 	}
 }
 void display_system(void){
-	for(int i=40;i>=0;i--){printf("=");}printf("\n");
-		    for(int i=5;i>=0;i--){printf(" ");}
-			printf("系统信息管理\n");
-			for(int i=40;i>=0;i--){printf("=");}printf("\n");
-			printf("1. 当前田块数量 \n");
-			printf("2. 数组容量\n");
-			printf("3. 版权信息\n");
-			printf("0. 返回主菜单\n");
-			for(int i=40;i>=0;i--){printf("=");}printf("\n");
-			printf("请选择(0-3):");
+    print_menu_separator();
+    print_center_title("系统信息管理");
+    print_menu_separator();
+    printf("1. 当前田块数量 \n");
+	printf("2. 数组容量\n");
+	printf("3. 版权信息\n");
+	printf("0. 返回主菜单\n");
+    print_menu_separator();
+	printf("请选择(0-3):");
 }
 void system_management(void){
 	int sub_choice;
