@@ -8,7 +8,7 @@
 #define HUMI_MAX 85.0f   // 湿度上限
 #define HUMI_MIN 40.0f   // 湿度下限
 #define CONTINUOUS_ABNORMAL_THRESHOLD 3
-//添加了温湿度宏定义
+
 
 //数据结构定义
 //试验田块信息(使用动态数组管理){
@@ -59,7 +59,7 @@ typedef enum {
     ALERT_LEVEL_3      // 轻度告警
 } AlertLevel;
 //声明全局变量
-static MonitorSystem* sys = NULL;
+static MonitorSystem* g_sys = NULL;
 void check_continuous_abnormal_alerts(MonitorSystem* sys, int field_id);
 //函数功能实现
 //系统管理函数
@@ -1341,16 +1341,16 @@ void field_management(void){
 	switch(sub_choice) {
 		    case 1: 
 		        printf("1. 添加新田块\n");
-		        add_field(sys,"东区实验田1号","张三");
-		        add_field(sys,"西区实验田2号","李四");
-		        add_field(sys,"南区实验田3号","王五");
-		        add_field(sys,"北区实验田4号","赵六");
-		        add_field(sys,"中区实验田5号","钱七");
+		        add_field(g_sys,"东区实验田1号","张三");
+		        add_field(g_sys,"西区实验田2号","李四");
+		        add_field(g_sys,"南区实验田3号","王五");
+		        add_field(g_sys,"北区实验田4号","赵六");
+		        add_field(g_sys,"中区实验田5号","钱七");
 		        break;
 		        
 		    case 2: 
 		        printf("2. 显示所有田块\n");
-		        display_all_fields(sys);
+		        display_all_fields(g_sys);
 		        break;
 		        
 		    case 3: {
@@ -1359,7 +1359,7 @@ void field_management(void){
 		        printf("请输入要查找的ID");
 				scanf("%d",&field_id);
 				getchar();
-				Field* p=find_field_by_id(sys,field_id);
+				Field* p=find_field_by_id(g_sys,field_id);
 				if(p!=NULL){
 					printf("找到匹配实验田,ID为%d, 名称为%s 管理人为%s 传感器数为%d\n",p->id,p->name,p->manager,p->sensor_count);
 					}else{
@@ -1373,7 +1373,7 @@ void field_management(void){
 		        printf("请输入要查找的田块名称(模糊匹配)；");
 		        scanf("%s",name);
 		        getchar();
-		        search_fields_by_name(sys,name);
+		        search_fields_by_name(g_sys,name);
 		        break;
 		        
 		    case 5: 
@@ -1382,7 +1382,7 @@ void field_management(void){
 		        printf("请输入要查找的田块管理员；");
 		        scanf("%s",manager);
 				getchar();
-				search_fields_by_manager(sys,manager);
+				search_fields_by_manager(g_sys,manager);
 		        break;
 		        
 		    case 6:{
@@ -1391,7 +1391,7 @@ void field_management(void){
 		    	printf("请输入要清除的田块：");
 		    	scanf("%d",&field_id);
 		    	getchar();
-		    	delete_field(sys,field_id);
+		    	delete_field(g_sys,field_id);
 		    	printf("已清除ID为%d田块\n",field_id);
 		    	break;}
 		    case 0: 
@@ -1405,7 +1405,7 @@ void field_management(void){
 			
 	}   
 }
-void display_SensorRecord_menu(void){
+void display_sensor_record_menu(void){
 	for(int i=40;i>=0;i--){printf("=");}printf("\n");
     for(int i=5;i>=0;i--){printf(" ");}
     printf("传感器管理\n");
@@ -1420,10 +1420,10 @@ void display_SensorRecord_menu(void){
     for(int i=40;i>=0;i--){printf("=");}printf("\n");
     printf("请选择(0-6):");
 }
-void SensorRecord_management(void){
+void sensor_record_management(void){
 	int sub_choice;
 	while(1){
-		display_SensorRecord_menu();
+		display_sensor_record_menu();
 		scanf("%d",&sub_choice);
 		getchar();
 	switch(sub_choice) {
@@ -1434,7 +1434,7 @@ void SensorRecord_management(void){
 			printf("请输入ID,温度,湿度\n");
 			scanf("%d%f%f",&field_id,&temperature,&humidity);
 			getchar();
-			add_sensor_record(sys,field_id,temperature,humidity);       
+			add_sensor_record(g_sys,field_id,temperature,humidity);       
 	        break;}
 				        
 		case 2: {
@@ -1444,7 +1444,7 @@ void SensorRecord_management(void){
 			printf("请输入ID,显示条数\n");
 			scanf("%d%d",&field_id,&count);
 			getchar();
-			display_latest_records(sys,field_id,count);	        
+			display_latest_records(g_sys,field_id,count);	        
 			break;}
 				        
 		case 3: {
@@ -1453,7 +1453,7 @@ void SensorRecord_management(void){
 			printf("请输入ID\n");
 			scanf("%d",&field_id);
 			getchar();
-			display_field_all_records(sys,field_id);	        
+			display_field_all_records(g_sys,field_id);	        
 			break;}
 				        
 		case 4: {
@@ -1462,7 +1462,7 @@ void SensorRecord_management(void){
 			printf("请输入保留最近几天的数据\n");
 			scanf("%d",&days);
 			getchar();
-			delete_old_records(sys,days);	        
+			delete_old_records(g_sys,days);	        
 			break;}
 				        
 		case 5: {
@@ -1472,7 +1472,7 @@ void SensorRecord_management(void){
 			printf("请输入ID\n");
 			scanf("%d",&field_id);
 			getchar();
-			count=get_record_count(sys,field_id);
+			count=get_record_count(g_sys,field_id);
 			printf("记录数量为%d\n",count);
 			break;}
 			
@@ -1482,7 +1482,7 @@ void SensorRecord_management(void){
 			printf("请输入ID\n");
 			scanf("%d",&field_id);
 			getchar();
-			calculate_avg_temperature(sys,field_id);
+			calculate_avg_temperature(g_sys,field_id);
 			break;}
 				        
 		case 0: 
@@ -1520,7 +1520,7 @@ void data_management(void){
 				printf("请输入ID\n");
 				scanf("%d",&field_id);
 				getchar();
-				find_abnormal_records(sys,field_id);
+				find_abnormal_records(g_sys,field_id);
 				break;}
 			case 2:{
 				int field_id;
@@ -1528,7 +1528,7 @@ void data_management(void){
 				printf("请输入ID\n");
 				scanf("%d",&field_id);
 				getchar();
-				find_extreme_values(sys,field_id);
+				find_extreme_values(g_sys,field_id);
 				break;}
 			case 3:{
 				int field_id;
@@ -1536,7 +1536,7 @@ void data_management(void){
 				printf("请输入ID\n");
 				scanf("%d",&field_id);
 				getchar();
-				analyze_trend(sys,field_id);
+				analyze_trend(g_sys,field_id);
 				break;}
 			case 0:
 				
@@ -1574,11 +1574,11 @@ void alert_management(void){
 				printf("请输入ID\n");
 				scanf("%d",&field_id);
 				getchar();
-				check_and_generate_alerts(sys,field_id);
+				check_and_generate_alerts(g_sys,field_id);
 				break;}
 			case 2:
 				printf("2. 显示所有告警\n");
-				display_all_alerts(sys);
+				display_all_alerts(g_sys);
 				break;
 			case 3:{
 				int field_id;
@@ -1587,7 +1587,7 @@ void alert_management(void){
 				printf("请输入ID,告警类型\n");
 				scanf("%d%s",&field_id,alert_type);
 				getchar();
-				resolve_alert(sys,field_id,alert_type);
+				resolve_alert(g_sys,field_id,alert_type);
 				break;}
 			case 4:{
 				int field_id;
@@ -1595,7 +1595,7 @@ void alert_management(void){
 				printf("请输入ID\n");
 				scanf("%d",&field_id);
 				getchar();
-				get_alert_count(sys,field_id);
+				get_alert_count(g_sys,field_id);
 				break;}
 			case 5:{
 				int field_id;
@@ -1603,7 +1603,7 @@ void alert_management(void){
 				printf("请输入ID\n");
 				scanf("%d",&field_id);
 				getchar();
-				display_continuous_alerts(sys,field_id);
+				display_continuous_alerts(g_sys,field_id);
 				break;}
 			case 0:
 				
@@ -1634,10 +1634,10 @@ void system_management(void){
 			getchar();
 			switch(sub_choice){
 				case 1:{
-					printf("1. 当前田块数量为%d \n",sys->field_count);
+					printf("1. 当前田块数量为%d \n",g_sys->field_count);
 					break;}
 				case 2:
-					printf("2. 数组容量为%d \n",sys->field_capacity);
+					printf("2. 数组容量为%d \n",g_sys->field_capacity);
 					break;
 				case 3:
 					printf("计科252陆奕君\n");
@@ -1652,7 +1652,7 @@ void system_management(void){
 		}
 }
 int main(){
-	sys = create_monitor_system();
+	g_sys = create_monitor_system();
 	int main_choice;
 	while(1){ 
 		display_main_menu();
@@ -1665,7 +1665,7 @@ int main(){
 	        break;
 	        
 	    case 2: // 传感器数据管理
-	        SensorRecord_management();
+	        sensor_record_management();
 	        break;
 	        
 	    case 3: // 数据查询统计
@@ -1682,7 +1682,7 @@ int main(){
 	        
 	    case 0: // 退出系统
 	    
-	        destroy_monitor_system(sys);
+	        destroy_monitor_system(g_sys);
 	        return 0;
 	        
 	    default:
