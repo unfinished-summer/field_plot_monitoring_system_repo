@@ -1,8 +1,14 @@
+// ==============================================
+// 头文件 + 全局宏常量定义
+// ==============================================
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #include <math.h>
+#include <windows.h>
+
+// 温湿度阈值常量
 #define TEMP_MAX 35.0f   // 温度上限
 #define TEMP_MIN 10.0f    // 温度下限
 #define HUMI_MAX 85.0f   // 湿度上限
@@ -13,15 +19,18 @@
 #define MENU_LINE_WIDTH 40
 
 
-//数据结构定义
-//试验田块信息(使用动态数组管理){
+// ==============================================
+// 结构体 & 枚举 类型定义
+// ==============================================
+// 实验田结构体
 typedef struct Field{
 	int id;//田块id,从1开始自动分配;
 	char name[30];//田块名称,如东区试验田1号
 	char manager[20];//负责人姓名
 	int sensor_count;//该田块已安装的传感器数量
 }Field;
-//传感器数据记录(使用链表管理)
+
+// 传感器记录链表节点
 typedef struct SensorRecord{
 	int field_id;//对应的田块id
 	char timestamp[20];//记录时间“2025-04-10 14:30”
@@ -30,7 +39,8 @@ typedef struct SensorRecord{
 	int is_abnormal;//0-正常，1-异常
 	struct SensorRecord* next;//指向下一条记录
 }SensorRecord;
-//系统告警信息(使用链表管理)
+
+// 告警链表节点
 typedef struct Alert{
 	int field_id;//发生告警的田块id
 	char alert_time[20];//告警时间
@@ -39,32 +49,107 @@ typedef struct Alert{
 	int severity;//严重程度，1-轻微，2-中等，3-严重
 	struct Alert* next;//指向下一条告警
 }Alert;
-//监测系统主结构
-typedef struct MonitorSystem{
+
+// 系统顶层管理结构体
+typedef struct Monitor_system{
 	Field** fields;//田块指针数组(二重指针)
 	int field_count;//当前田块数量
 	int field_capacity;//数组容量，初始为10
 	SensorRecord *record_head;//传感器记录链表头指针
 	Alert *alert_head;//告警信息链表头指针
 	int next_field_id;//下一个可用田块的id，用于保证每个新创建的田块都有一个唯一且连续的id
-}MonitorSystem;
-//趋势枚举
+}Monitor_system;
+
+// 温湿度趋势枚举
 typedef enum {
     TREND_STABLE,    // 平稳
     TREND_RISING,    // 上升
     TREND_FALLING,   // 下降
     TREND_UNDEFINED  // 无足够数据无法判断
 } TrendType;
+
 //告警等级枚举
 typedef enum {
-    ALERT_LEVEL_1 = 1, // 严重告警
+    ALERT_LEVEL_1 = 1, // 轻微告警
     ALERT_LEVEL_2,     // 中度告警
-    ALERT_LEVEL_3      // 轻度告警
+    ALERT_LEVEL_3      // 严重告警
 } AlertLevel;
-//声明全局变量
-static MonitorSystem* g_sys = NULL;
-void check_continuous_abnormal_alerts(MonitorSystem* sys, int field_id);
-//函数功能实现
+
+// ==============================================
+// 全局变量 + 全部函数前置声明
+// ==============================================
+static Monitor_system* sys = NULL;
+// 通用工具函数
+static void clear_screen(void);
+static void pause_console(void);
+static void print_menu_separator(void);
+static void print_center_title(const char* title);
+static void free_record_list(SensorRecord* head);
+static void free_alert_list(Alert* head);
+static int ts_to_time(const char* ts, time_t* out_t);
+int compare_timestamp(const char* ts1, const char* ts2);
+
+// 系统核心管理
+Monitor_system* create_monitor_system(void);
+void destroy_monitor_system(void);
+void expand_field_array(Monitor_system* sys);
+
+// 实验田管理模块
+int add_field(Monitor_system* sys, const char* name, const char* manager);
+void display_all_fields(Monitor_system* sys);
+Field* find_field_by_id(Monitor_system* sys, int field_id);
+int delete_field(Monitor_system* sys, int field_id);
+void search_fields_by_name(Monitor_system* sys, const char* keyword);
+void search_fields_by_manager(Monitor_system* sys, const char* manager_name);
+
+// 传感器记录模块
+int add_sensor_record(Monitor_system* sys, int field_id, float temp, float hum);
+void display_latest_records(Monitor_system* sys, int field_id, int show_cnt);
+void display_field_all_records(Monitor_system* sys, int field_id);
+void delete_old_records(Monitor_system* sys, int days);
+int get_record_count(Monitor_system* sys, int field_id);
+float calculate_avg_temperature(Monitor_system* sys, int field_id);
+
+// 数据分析模块
+void find_abnormal_records(Monitor_system* sys, int field_id);
+void find_extreme_values(Monitor_system* sys, int field_id);
+void analyze_trend(Monitor_system* sys, int field_id);
+
+// 告警管理模块
+void check_continuous_abnormal_alerts(Monitor_system* sys, int field_id);
+void display_continuous_alerts(Monitor_system* sys, int field_id);
+void check_and_generate_alerts(Monitor_system* sys, int field_id);
+void display_all_alerts(Monitor_system* sys);
+int resolve_alert(Monitor_system* sys, int field_id, const char* alert_type);
+int get_alert_count(Monitor_system* sys, int field_id);
+
+// 菜单交互模块
+void display_main_menu(void);
+void display_field_menu(void);
+void field_management(void);
+void display_sensor_record_menu(void);
+void sensor_record_management(void);
+void display_data_query(void);
+void data_management(void);
+void display_alert(void);
+void alert_management(void);
+void display_system(void);
+void system_management(void);
+
+// ==============================================
+// 第一分层：通用工具函数实现
+// ==============================================
+static void clear_screen(void)
+{
+    system("cls");
+}
+
+static void pause_console(void)
+{
+    printf("\n按回车键返回菜单...");
+    getchar();
+}
+
 // 打印菜单分隔线，统一宽度
 static void print_menu_separator(void)
 {
@@ -74,6 +159,7 @@ static void print_menu_separator(void)
     }
     printf("\n");
 }
+
 // 打印居中标题
 static void print_center_title(const char* title)
 {
@@ -81,12 +167,35 @@ static void print_center_title(const char* title)
     for (int i = 0; i < space_cnt; i++) printf(" ");
     printf("%s\n", title);
 }
-//系统管理函数
-MonitorSystem* create_monitor_system(void){
+
+static void free_record_list(SensorRecord* h)
+{
+    while (h)
+    {
+        SensorRecord* t = h;
+        h = h->next;
+        free(t);
+    }
+}
+
+static void free_alert_list(Alert* h)
+{
+    while (h)
+    {
+        Alert* t = h;
+        h = h->next;
+        free(t);
+    }
+}
+
+// ==============================================
+// 第二分层：系统核心操作
+// ==============================================
+Monitor_system* create_monitor_system(void){
 	//创建系统
-	MonitorSystem* sys=(MonitorSystem*)malloc(sizeof(MonitorSystem));
+	Monitor_system* sys=(Monitor_system*)malloc(sizeof(Monitor_system));
 	if(sys==NULL){
-		perror("Failed to allocate MonitorSystem");
+		perror("系统管理结构体内存分配失败");
 		return NULL;
 	}
 	//初始化所有成员
@@ -99,7 +208,7 @@ MonitorSystem* create_monitor_system(void){
 	//初始化田块指针数组
 	sys->fields=(Field**)malloc(sys->field_capacity*sizeof(Field*));
 	if(sys->fields==NULL){
-		perror("Failed to allocate fields array");
+		perror("田块指针数组内存分配失败");
 		free(sys);
 		sys=NULL;
 	}
@@ -108,44 +217,61 @@ MonitorSystem* create_monitor_system(void){
 	for(int i=0;i<sys->field_capacity;i++){
 		sys->fields[i]=NULL;
 	}
-	return sys;
+    return sys;
 }
-void destroy_monitor_system(MonitorSystem* sys){
-	if(sys==NULL){
-		perror("Failed to allocate MonitorSystem");
-		return;
-	}
-	if(sys->fields!=NULL){
-		for(int i=0;i<sys->field_capacity;i++){
-			if(sys->fields[i]!=NULL){
-				free(sys->fields[i]);
-				sys->fields[i]=NULL;
-			}
-			
-			
-	}
-		free(sys->fields);
-		sys->fields=NULL;
-	}
-	
-	Alert* curr=sys->alert_head;
-	while(curr!=NULL){
-		Alert* temp = curr;
-		curr=curr->next;
-		free(temp);
-	}
-	
-	SensorRecord* cur=sys->record_head;
-	while(cur!=NULL){
-		SensorRecord* temp =cur;
-		cur=cur->next;
-		free(temp);
-	}
-	
-	free(sys);
-	sys=NULL;
+void destroy_monitor_system(void) {
+    if (sys == NULL) {
+        printf("系统已为空，无需销毁\n");
+        return;
+    }
+    if (sys->fields != NULL) {
+        for (int i = 0;i < sys->field_capacity;i++) {
+            if (sys->fields[i] != NULL) {
+                free(sys->fields[i]);
+                sys->fields[i] = NULL;
+            }
+        }
+        free(sys->fields);
+        sys->fields = NULL;
+    }
+    free_alert_list(sys->alert_head);
+    free_record_list(sys->record_head);
+    free(sys);
+    sys = NULL; // 直接操作全局指针
 }
+void expand_field_array(Monitor_system* sys)
+{
+    if (sys == NULL)
+    {
+        perror("系统指针为空，扩容失败");
+        return;
+    }
+    int new_capacity = sys->field_capacity * 2;
+    Field** temp_fields = (Field**)realloc(sys->fields, new_capacity * sizeof(Field*));
+
+    if (temp_fields != NULL)
+    {
+        sys->fields = temp_fields;
+        sys->field_capacity = new_capacity;
+
+        for (int i = sys->field_count; i < sys->field_capacity; i++)
+        {
+            sys->fields[i] = NULL;
+        }
+
+        printf("田块数组扩容成功！原容量：%d -> 新容量：%d\n", sys->field_capacity / 2, new_capacity);
+    }
+    else
+    {
+        perror("错误：田块数组扩容失败（realloc 内存分配失败）");
+    }
+}
+// ==============================================
+// 第七分层：菜单交互逻辑
+// ==============================================
+
 void display_main_menu(void){
+    clear_screen();
     print_menu_separator();
     print_center_title("校园实验田环境监测系统");
     print_menu_separator();
@@ -158,35 +284,26 @@ void display_main_menu(void){
     print_menu_separator();
 	printf("请选择操作(0-5):");
 }
-void expand_field_array(MonitorSystem* sys){
+
+
+// ==============================================
+// 第三分层：实验田管理模块
+// ==============================================
+int add_field(Monitor_system *sys, const char *name, const char *manager){
 	if(sys==NULL){
-		perror("Failed to allocate MonitorSystem");
-		return;
-	}
-	int new_capacity=sys->field_capacity*2;
-	Field** temp_fields=(Field**)realloc(sys->fields,new_capacity*sizeof(Field*));
-	if(temp_fields!=NULL){
-		sys->fields=temp_fields;
-		sys->field_capacity=new_capacity;
-	for(int i=sys->field_count;i<sys->field_capacity;i++){
-		sys->fields[i]=NULL;
-	}
-	printf("田块数组扩容成功！原容量：%d-> 新容量：%d\n",sys->field_capacity / 2, new_capacity);
-	}else{
-		perror("错误：田块数组扩容失败（realloc 内存分配失败）");
-	}
-} 
-//实验田管理函数
-int add_field(MonitorSystem *sys, const char *name, const char *manager){
-	if(sys==NULL){
-		perror("Failed to allocate MonitorSystem");
+		perror("系统管理结构体内存分配失败");
 		return 0;
 	}
 //	 分配新实验田内存并赋值
 	Field* new_field=(Field*)malloc(sizeof(Field));
+    if (new_field == NULL)
+    {
+        perror("malloc Field failed");
+        return 0;
+    }
 	new_field->id=sys->next_field_id;
-	strcpy(new_field->name,name);
-	strcpy(new_field->manager,manager);
+    strcpy_s(new_field->name, sizeof(new_field->name), name);
+    strcpy_s(new_field->manager, sizeof(new_field->manager), manager);
 	new_field->sensor_count=3;
 //如果数组容量不足则自动翻倍
 	if(sys->field_capacity==sys->field_count){expand_field_array(sys);}
@@ -196,9 +313,9 @@ int add_field(MonitorSystem *sys, const char *name, const char *manager){
 	sys->next_field_id++;
 	return 0;
 }
-void display_all_fields(MonitorSystem* sys){
+void display_all_fields(Monitor_system* sys){
 	if(sys==NULL){
-		perror("Failed to allocate MonitorSystem");
+		perror("系统管理结构体内存分配失败");
 		return ;
 		}	
         print_menu_separator();
@@ -211,10 +328,10 @@ void display_all_fields(MonitorSystem* sys){
 		}
         print_menu_separator();
 }
-Field* find_field_by_id(MonitorSystem* sys,int field_id){
+Field* find_field_by_id(Monitor_system* sys,int field_id){
 	
 	if (sys == NULL) {
-	    perror("Failed to allocate MonitorSystem");
+	    perror("系统管理结构体内存分配失败");
 	    return NULL;
 	}
 	if (field_id <= 0) {
@@ -232,10 +349,10 @@ Field* find_field_by_id(MonitorSystem* sys,int field_id){
 	printf("提示：未找到ID为%d的实验田块！\n", field_id);
 	return NULL;
 }
-int delete_field(MonitorSystem* sys,int field_id){
+int delete_field(Monitor_system* sys,int field_id){
 	    // 1. 参数校验
 	if (sys == NULL) {
-	    perror("Failed to allocate MonitorSystem");
+	    perror("系统管理结构体内存分配失败");
 	    return -1;
 	}
 	if (field_id <= 0) {
@@ -257,52 +374,50 @@ int delete_field(MonitorSystem* sys,int field_id){
 	    }
 	
 	    // 3. 释放目标田块的内存
-    if (sys->record_head != NULL) {
-        SensorRecord *prev_rec = NULL;
-        SensorRecord *curr_rec = sys->record_head;
-        while (curr_rec != NULL) {
-            if (curr_rec->field_id == field_id) {
-                // 处理头节点删除
-                if (prev_rec == NULL) {
-                    sys->record_head = curr_rec->next;
-                    free(curr_rec);
-                    curr_rec = sys->record_head;
-                }
-                // 处理中间/尾节点删除
-                else {
-                    prev_rec->next = curr_rec->next;
-                    free(curr_rec);
-                    curr_rec = prev_rec->next;
-                }
-            } else {
-                prev_rec = curr_rec;
-                curr_rec = curr_rec->next;
+        // 释放当前被删除田块结构体
+        free(sys->fields[target_index]);
+        sys->fields[target_index] = NULL;
+
+        // 仅删除该田块所有传感器记录
+        SensorRecord* p = sys->record_head, * pre = NULL;
+        while (p)
+        {
+            if (p->field_id == field_id)
+            {
+                SensorRecord* del = p;
+                if (pre == NULL)
+                    sys->record_head = p->next;
+                else
+                    pre->next = p->next;
+                p = p->next;
+                free(del);
+            }
+            else
+            {
+                pre = p;
+                p = p->next;
             }
         }
-    }
-    if (sys->alert_head != NULL) {
-        Alert *prev_alt = NULL;
-        Alert *curr_alt = sys->alert_head;
-        while (curr_alt != NULL) {
-            if (curr_alt->field_id == field_id) {
-                // 处理头节点删除
-                if (prev_alt == NULL) {
-                    sys->alert_head = curr_alt->next;
-                    free(curr_alt);
-                    curr_alt = sys->alert_head;
-                }
-                // 处理中间/尾节点删除
-                else {
-                    prev_alt->next = curr_alt->next;
-                    free(curr_alt);
-                    curr_alt = prev_alt->next;
-                }
-            } else {
-                prev_alt = curr_alt;
-                curr_alt = curr_alt->next;
+        // 仅删除该田块所有告警
+        Alert* ap = sys->alert_head, * apre = NULL;
+        while (ap)
+        {
+            if (ap->field_id == field_id)
+            {
+                Alert* del = ap;
+                if (apre == NULL)
+                    sys->alert_head = ap->next;
+                else
+                    apre->next = ap->next;
+                ap = ap->next;
+                free(del);
+            }
+            else
+            {
+                apre = ap;
+                ap = ap->next;
             }
         }
-    }    
 	
 	    // 4. 移动后续田块填充空缺（关键：避免数组留空）
 	    for (int i = target_index; i < sys->field_count - 1; i++) {
@@ -317,14 +432,14 @@ int delete_field(MonitorSystem* sys,int field_id){
 	    printf("提示：已成功删除ID=%d的实验田，且清理其所有关联监测记录和告警记录！\n", field_id);
 	    return 0;
 }
-void search_fields_by_name(MonitorSystem* sys,const char* keyword){
+void search_fields_by_name(Monitor_system* sys,const char* keyword){
 	
 	if(keyword==NULL||strlen(keyword)==0){
 		printf("错误：搜索关键词不能为空！\n");
 		return;
 	}
 	if (sys == NULL) {
-	    perror("Failed to allocate MonitorSystem");
+	    perror("系统管理结构体内存分配失败");
 	    return ;
 	}
 	
@@ -344,10 +459,10 @@ void search_fields_by_name(MonitorSystem* sys,const char* keyword){
 		printf("提示：未找到名称为%s的实验田块！\n", keyword);
 		return ;}
 }
-void search_fields_by_manager(MonitorSystem* sys,const char* manager_name){
+void search_fields_by_manager(Monitor_system* sys,const char* manager_name){
 	int found=0;
 	if (sys == NULL) {
-	    perror("Failed to allocate MonitorSystem");
+	    perror("系统管理结构体内存分配失败");
 	    return ;
 	}
 		
@@ -363,34 +478,56 @@ void search_fields_by_manager(MonitorSystem* sys,const char* manager_name){
 	}
 		if(found){return;}
 		else{
-		printf("提示：未找到名称为%s的实验田块！\n", manager_name);
+            printf("提示：未找到负责人匹配%s的实验田块！\n", manager_name);
 		return ;}
 }
 //传感器数据管理函数
-// 辅助函数：比较两个时间字符串（新的返回1，旧的返回-1，相同返回0）
-int compare_timestamp(const char *ts1, const char *ts2) {
-	
-    struct tm tm1 = {0}, tm2 = {0};
-    // 手动解析 "YYYY-MM-DD HH:MM" 格式的时间字符串
-    if (sscanf(ts1, "%d-%d-%d %d:%d", &tm1.tm_year, &tm1.tm_mon, &tm1.tm_mday, &tm1.tm_hour, &tm1.tm_min) != 5) {
-        return 0; // 解析失败默认相等
+/*
+*@brief "YYYY-MM-DD HH:MM" 时间字符串转为 time_t 时间戳
+* @param ts 输入时间字符串
+* @return 成功返回time_t；解析格式错误返回 - 1
+*/
+static int ts_to_time(const char* ts, time_t* out_t)
+{
+    struct tm tm_buf = { 0 };
+    int ret = sscanf_s(ts, "%d-%d-%d %d:%d",
+        &tm_buf.tm_year,
+        &tm_buf.tm_mon,
+        &tm_buf.tm_mday,
+        &tm_buf.tm_hour,
+        &tm_buf.tm_min
+    );
+    if (ret != 5)
+    {
+        return -1;
     }
-    if (sscanf(ts2, "%d-%d-%d %d:%d", &tm2.tm_year, &tm2.tm_mon, &tm2.tm_mday, &tm2.tm_hour, &tm2.tm_min) != 5) {
-        return 0;
-    }
-    // 转换为 tm 结构体的标准格式（年份减 1900，月份减 1）
-    tm1.tm_year -= 1900;
-    tm1.tm_mon -= 1;
-    tm2.tm_year -= 1900;
-    tm2.tm_mon -= 1;
-    
-    time_t t1 = mktime(&tm1), t2 = mktime(&tm2);
-    return (t1 > t2) ? 1 : (t1 < t2) ? -1 : 0;
+    tm_buf.tm_year -= 1900;
+    tm_buf.tm_mon -= 1;
+    tm_buf.tm_sec = 0;
+    tm_buf.tm_isdst = -1;
+    *out_t = mktime(&tm_buf);
+    return 0;
 }
-int add_sensor_record(MonitorSystem* sys,int field_id,float temperature,float humidity){
+
+// 辅助函数：比较两个时间字符串（新的返回1，旧的返回-1，相同返回0）
+int compare_timestamp(const char* ts1, const char* ts2) {
+    time_t t1, t2;
+    int r1 = ts_to_time(ts1, &t1);
+    int r2 = ts_to_time(ts2, &t2);
+    if (r1 != 0 || r2 != 0) return 0;
+    if (t1 > t2) return 1;
+    if (t1 < t2) return -1;
+    return 0;
+}
+// ==============================================
+// 第四分层：传感器记录模块
+// ==============================================
+
+int add_sensor_record(Monitor_system* sys,int field_id,float temperature,float humidity){
 	//合法性校验
 	if(sys==NULL||field_id<=0){
 		printf("参数错误：系统指针为空或田块ID无效！\n");
+        return -1;
 	}
 	if(find_field_by_id(sys,field_id)==NULL){
 		printf("添加失败：ID=%d的田块不存在！\n", field_id);
@@ -405,15 +542,16 @@ int add_sensor_record(MonitorSystem* sys,int field_id,float temperature,float hu
 	new_sensor_record->field_id=field_id;
 	new_sensor_record->temperature=temperature;
 	new_sensor_record->humidity=humidity;
-	time_t now =time(NULL);
-	struct tm* tm_info=localtime(&now);
-	strftime(new_sensor_record->timestamp,sizeof(new_sensor_record->timestamp),"%Y-%m-%d %H:%M", tm_info);
+    time_t now = time(NULL);
+    struct tm tm_buf;
+    localtime_s(&tm_buf, &now);
+    strftime(new_sensor_record->timestamp, sizeof(new_sensor_record->timestamp), "%Y-%m-%d %H:%M", &tm_buf);
 	new_sensor_record->is_abnormal=0;
-	if (temperature < 10 || temperature > 35 || humidity < 40 || humidity > 85){
+    if (temperature < TEMP_MIN || temperature > TEMP_MAX || humidity < HUMI_MIN || humidity > HUMI_MAX) {
 		new_sensor_record->is_abnormal=1;
 		printf("温湿度异常！已标记该记录，将自动生成告警\n");
 	} 
-	//链表头插法
+	
 	new_sensor_record->next=sys->record_head;//新节点指向原来的第一个节点
 	sys->record_head=new_sensor_record;//头节点指向新节点
 	printf("添加记录成功\n");
@@ -423,9 +561,9 @@ int add_sensor_record(MonitorSystem* sys,int field_id,float temperature,float hu
 	check_continuous_abnormal_alerts(sys, field_id);
 	return 0;
 }
-void display_latest_records(MonitorSystem* sys,int field_id,int count){
+void display_latest_records(Monitor_system* sys,int field_id,int count){
 		if (sys == NULL) {
-	        perror("Failed to allocate MonitorSystem");
+	        perror("系统管理结构体内存分配失败");
 	        return;
 	    }
 	    if (field_id <= 0) {
@@ -483,9 +621,9 @@ void display_latest_records(MonitorSystem* sys,int field_id,int count){
 	    free(temp);
 	}//让 filtered先指向下一块，然后放掉上一块，如果下一块还有接着放 
 }
-void display_field_all_records(MonitorSystem* sys,int field_id){
+void display_field_all_records(Monitor_system* sys,int field_id){
 	if (sys == NULL) {
-	    perror("Failed to allocate MonitorSystem");
+	    perror("系统管理结构体内存分配失败");
 	    return;
 	}
 	if (field_id <= 0) {
@@ -553,9 +691,9 @@ void display_field_all_records(MonitorSystem* sys,int field_id){
 	        free(temp);
 	    }
 	}
-void delete_old_records(MonitorSystem* sys,int days){
+void delete_old_records(Monitor_system* sys,int days){
     if (sys == NULL) {
-        perror("Failed to allocate MonitorSystem");
+        perror("系统管理结构体内存分配失败");
         return;
     }
     if (days <= 0) {
@@ -568,29 +706,16 @@ void delete_old_records(MonitorSystem* sys,int days){
     }
 	time_t now = time(NULL);
     time_t cutoff = now - (days * 24 * 60 * 60); // 转换为秒数
-    struct tm cutoff_tm = *localtime(&cutoff);
+    struct tm cutoff_tm;
+    localtime_s(&cutoff_tm, &cutoff);
     
     SensorRecord *current = sys->record_head;
     SensorRecord *prev = NULL;
     while (current != NULL) {
         // 解析当前记录的时间戳为 tm 结构体
-        struct tm record_tm = {0};
-        if (sscanf(current->timestamp, "%d-%d-%d %d:%d", 
-            &record_tm.tm_year, &record_tm.tm_mon, &record_tm.tm_mday,
-            &record_tm.tm_hour, &record_tm.tm_min) != 5) {
-            printf("警告：记录时间戳格式错误，跳过该记录！\n");
-            prev = current;
-            current = current->next;
-            continue;
-        }
-        // 转换为 tm 标准格式（年份减1900，月份减1）
-        record_tm.tm_year -= 1900;
-        record_tm.tm_mon -= 1;
-        record_tm.tm_sec = 0; // 补全秒数（原记录无秒数）
-        record_tm.tm_isdst = -1; // 自动识别夏令时
-
-        // 3. 比较记录时间与截止时间
-        time_t record_time = mktime(&record_tm);
+        time_t record_time;
+        int ret = ts_to_time(current->timestamp, &record_time);
+        if (ret != 0) continue; // 解析失败直接跳过这条记录
         if (record_time < cutoff) {
             // 需删除当前节点
             SensorRecord *to_delete = current;
@@ -613,9 +738,9 @@ void delete_old_records(MonitorSystem* sys,int days){
 
     printf("成功删除 %d 天前的所有传感器记录！\n", days);
 }
-int get_record_count(MonitorSystem* sys,int field_id){
+int get_record_count(Monitor_system* sys,int field_id){
 	if(sys==NULL){
-		perror("Failed to allocate MonitorSystem");
+		perror("系统管理结构体内存分配失败");
 		return 0;
 	}
 	if(field_id<=0){
@@ -640,9 +765,9 @@ int get_record_count(MonitorSystem* sys,int field_id){
 	}
 	return count;
 }
-float calculate_avg_temperature(MonitorSystem* sys,int field_id){
+float calculate_avg_temperature(Monitor_system* sys,int field_id){
     if (sys == NULL) {
-        perror("Failed to allocate MonitorSystem");
+        perror("系统管理结构体内存分配失败");
         return -1.0f; // 返回异常值标识
     }
     if (field_id <= 0) {
@@ -681,11 +806,14 @@ float calculate_avg_temperature(MonitorSystem* sys,int field_id){
            field_id, avg_temp, valid_count);
     return avg_temp;		
 }
-//数据分析函数
-void find_abnormal_records(MonitorSystem* sys,int field_id){
+// ==============================================
+// 第五分层：数据分析模块
+// ==============================================
+
+void find_abnormal_records(Monitor_system* sys,int field_id){
     // 1. 入参合法性校验
     if (sys == NULL) {
-        perror("Failed to allocate MonitorSystem");
+        perror("系统管理结构体内存分配失败");
         return;
     }
     if (field_id <= 0) {
@@ -714,15 +842,15 @@ void find_abnormal_records(MonitorSystem* sys,int field_id){
             abnormal_count++;
             // 分析异常原因
             char reason[50] = "";
-            if (current->temperature < 10) {
-                strcat(reason, "温度过低;");
-            } else if (current->temperature > 35) {
-                strcat(reason, "温度过高;");
+            if (current->temperature < TEMP_MIN) {
+                strcat_s(reason, sizeof(reason), "温度过低;");
+            } else if (current->temperature > TEMP_MAX) {
+                strcat_s(reason, sizeof(reason), "温度过高;");
             }
-            if (current->humidity < 40) {
-                strcat(reason, "湿度过低;");
-            } else if (current->humidity > 85) {
-                strcat(reason, "湿度过高;");
+            if (current->humidity < HUMI_MIN) {
+                strcat_s(reason, sizeof(reason), "湿度过低;");
+            } else if (current->humidity > HUMI_MAX) {
+                strcat_s(reason, sizeof(reason), "湿度过高;");
             }
             // 去除末尾的分号
             if (reason[strlen(reason)-1] == ';') {
@@ -751,10 +879,10 @@ void find_abnormal_records(MonitorSystem* sys,int field_id){
     }
     printf("================================================\n");	
 }
-void find_extreme_values(MonitorSystem* sys,int field_id){
+void find_extreme_values(Monitor_system* sys,int field_id){
     // 1. 入参合法性校验
     if (sys == NULL) {
-        perror("Failed to allocate MonitorSystem");
+        perror("系统管理结构体内存分配失败");
         return;
     }
     if (field_id <= 0) {
@@ -787,21 +915,21 @@ void find_extreme_values(MonitorSystem* sys,int field_id){
             // 温度极值判断
             if (current->temperature > max_temp) {
                 max_temp = current->temperature;
-                strcpy(max_temp_ts, current->timestamp);
+                strcpy_s(max_temp_ts, sizeof(max_temp_ts), current->timestamp);
             }
             if (current->temperature < min_temp) {
                 min_temp = current->temperature;
-                strcpy(min_temp_ts, current->timestamp);
+                strcpy_s(min_temp_ts, sizeof(min_temp_ts), current->timestamp);
             }
             
             // 湿度极值判断
             if (current->humidity > max_hum) {
                 max_hum = current->humidity;
-                strcpy(max_hum_ts, current->timestamp);
+                strcpy_s(max_hum_ts, sizeof(max_hum_ts), current->timestamp);
             }
             if (current->humidity < min_hum) {
                 min_hum = current->humidity;
-                strcpy(min_hum_ts, current->timestamp);
+                strcpy_s(min_hum_ts, sizeof(min_hum_ts), current->timestamp);
             }
         }
         current = current->next;
@@ -823,10 +951,10 @@ void find_extreme_values(MonitorSystem* sys,int field_id){
            max_hum, max_hum_ts, min_hum, min_hum_ts);
     printf("└──────────┴─────────────┴─────────────┴─────────────┘\n");	
 }
-void analyze_trend(MonitorSystem* sys,int field_id){
+void analyze_trend(Monitor_system* sys,int field_id){
     // 1. 入参合法性校验
     if (sys == NULL) {
-        perror("Failed to allocate MonitorSystem");
+        perror("系统管理结构体内存分配失败");
         return;
     }
     if (field_id <= 0) {
@@ -853,7 +981,7 @@ void analyze_trend(MonitorSystem* sys,int field_id){
         if (current->field_id == field_id) {
             temp_array[record_count] = current->temperature;
             hum_array[record_count] = current->humidity;
-            strcpy(ts_array[record_count], current->timestamp);
+            strcpy_s(ts_array[record_count], sizeof(ts_array[record_count]), current->timestamp);
             record_count++;
         }
         current = current->next;
@@ -870,8 +998,7 @@ void analyze_trend(MonitorSystem* sys,int field_id){
     // 4.1 温度趋势计算
     float temp_diff = temp_array[record_count - 1] - temp_array[0]; // 末值 - 初值
     TrendType temp_trend;
-    const float TREND_THRESHOLD = 0.5f; // 趋势阈值（变化小于0.5℃判定为平稳，可按需调整）
-    if (fabs(temp_diff) < TREND_THRESHOLD) {
+    if (fabs(temp_diff) < TREND_CHANGE_THRESHOLD) {
         temp_trend = TREND_STABLE;
     } else if (temp_diff > 0) {
         temp_trend = TREND_RISING;
@@ -882,7 +1009,7 @@ void analyze_trend(MonitorSystem* sys,int field_id){
     // 4.2 湿度趋势计算
     float hum_diff = hum_array[record_count - 1] - hum_array[0];
     TrendType hum_trend;
-    if (fabs(hum_diff) < TREND_THRESHOLD) { // 湿度采用相同阈值，可单独调整
+    if (fabs(hum_diff) < TREND_CHANGE_THRESHOLD) { // 湿度采用相同阈值，可单独调整
         hum_trend = TREND_STABLE;
     } else if (hum_diff > 0) {
         hum_trend = TREND_RISING;
@@ -956,8 +1083,11 @@ void analyze_trend(MonitorSystem* sys,int field_id){
         printf(" (%.1f%%)\n", hum_array[i]);
     }	
 }
-//告警管理函数
-void check_continuous_abnormal_alerts(MonitorSystem* sys, int field_id) {
+// ==============================================
+// 第六分层：告警管理模块
+// ==============================================
+
+void check_continuous_abnormal_alerts(Monitor_system* sys, int field_id) {
     // 1. 参数合法性校验
     if (sys == NULL || field_id <= 0) {
         printf("错误：参数非法，无法检测持续异常告警\n");
@@ -995,7 +1125,7 @@ void check_continuous_abnormal_alerts(MonitorSystem* sys, int field_id) {
     char alert_subtype[20] = ""; // 告警子类型（连续/累计）
     if (continuous_count >= CONTINUOUS_ABNORMAL_THRESHOLD) {
         trigger_alert = 1;
-        strcpy(alert_subtype, "连续异常");
+        strcpy_s(alert_subtype, sizeof(alert_subtype), "连续异常");
     } 
 
     // 4. 触发告警：生成持续异常告警记录（级别为最高3级）
@@ -1010,11 +1140,12 @@ void check_continuous_abnormal_alerts(MonitorSystem* sys, int field_id) {
         new_alert->field_id = field_id;
         // 获取当前时间作为告警时间
         time_t now = time(NULL);
-        struct tm* tm_info = localtime(&now);
-        strftime(new_alert->alert_time, sizeof(new_alert->alert_time), "%Y-%m-%d %H:%M", tm_info);
+        struct tm tm_buf;
+        localtime_s(&tm_buf, &now);
+        strftime(new_alert->alert_time, sizeof(new_alert->alert_time), "%Y-%m-%d %H:%M", &tm_buf);
         
-        strcpy(new_alert->alert_type, "持续环境异常");
-        sprintf(new_alert->description,
+        strcpy_s(new_alert->alert_type, sizeof(new_alert->alert_type), "持续环境异常");
+        sprintf_s(new_alert->description,
                 "实验田[%s]%s | 连续异常：%d条 累计异常：%d条",
                 target_field->name, alert_subtype, continuous_count, abnormal_count);
         new_alert->severity = ALERT_LEVEL_3; // 持续异常设为最高级别
@@ -1030,7 +1161,7 @@ void check_continuous_abnormal_alerts(MonitorSystem* sys, int field_id) {
                field_id, continuous_count, abnormal_count);
     }
 }
-void display_continuous_alerts(MonitorSystem* sys, int field_id) {
+void display_continuous_alerts(Monitor_system* sys, int field_id) {
     // 1. 参数校验
     if (sys == NULL || field_id <= 0) {
         printf("错误：参数非法，无法查询持续异常告警\n");
@@ -1065,10 +1196,10 @@ void display_continuous_alerts(MonitorSystem* sys, int field_id) {
     }
     printf("======================================================================\n\n");
 }
-void check_and_generate_alerts(MonitorSystem* sys,int field_id){
+void check_and_generate_alerts(Monitor_system* sys,int field_id){
     // 1. 合法性校验
     if (sys == NULL) {
-        perror("Failed to allocate MonitorSystem");
+        perror("系统管理结构体内存分配失败");
         return;
     }
     if (field_id <= 0) {
@@ -1098,19 +1229,19 @@ void check_and_generate_alerts(MonitorSystem* sys,int field_id){
 
             // 3.1 填充告警基础信息
             new_alert->field_id = field_id;
-            strcpy(new_alert->alert_time, record_ptr->timestamp); // 告警时间复用异常记录时间
+            strcpy_s(new_alert->alert_time, sizeof(new_alert->alert_time), record_ptr->timestamp); // 告警时间复用异常记录时间
 
             // 3.2 确定告警类型和描述
             char temp_reason[50] = "";
-            if (record_ptr->temperature < 10) {
-                strcat(temp_reason, "温度过低;");
-            } else if (record_ptr->temperature > 35) {
-                strcat(temp_reason, "温度过高;");
+            if (record_ptr->temperature < TEMP_MIN) {
+                strcat_s(temp_reason, sizeof(temp_reason), "温度过低;");
+            } else if (record_ptr->temperature > TEMP_MAX) {
+                strcat_s(temp_reason, sizeof(temp_reason), "温度过高;");
             }
-            if (record_ptr->humidity < 40) {
-                strcat(temp_reason, "湿度过低;");
-            } else if (record_ptr->humidity > 85) {
-                strcat(temp_reason, "湿度过高;");
+            if (record_ptr->humidity < HUMI_MIN) {
+                strcat_s(temp_reason, sizeof(temp_reason), "湿度过低;");
+            } else if (record_ptr->humidity > HUMI_MAX) {
+                strcat_s(temp_reason, sizeof(temp_reason), "湿度过高;");
             }
             // 移除末尾分号
             if (temp_reason[strlen(temp_reason)-1] == ';') {
@@ -1118,8 +1249,8 @@ void check_and_generate_alerts(MonitorSystem* sys,int field_id){
             }
 
             // 3.3 填充告警类型、描述、严重等级
-            strcpy(new_alert->alert_type, "环境参数异常");
-            sprintf(new_alert->description, 
+            strcpy_s(new_alert->alert_type, sizeof(new_alert->alert_type), "环境参数异常");
+            sprintf_s(new_alert->description, 
                     "%s %s | 温度:%.1f℃ 湿度:%.1f%%",
                      target_field->name, temp_reason,
                     record_ptr->temperature, record_ptr->humidity);
@@ -1158,10 +1289,10 @@ void check_and_generate_alerts(MonitorSystem* sys,int field_id){
         printf("实验田ID:%d 暂无未处理的异常记录，无需生成告警！\n", field_id);
     }	
 }
-void display_all_alerts(MonitorSystem* sys){
+void display_all_alerts(Monitor_system* sys){
     // 1. 入参合法性校验
     if (sys == NULL) {
-        perror("Failed to allocate MonitorSystem");
+        perror("系统管理结构体内存分配失败");
         return;
     }
     if (sys->alert_head == NULL) {
@@ -1247,10 +1378,10 @@ void display_all_alerts(MonitorSystem* sys){
         free(temp);
     }	
 }
-int resolve_alert(MonitorSystem* sys,int field_id,const char* alert_type){
+int resolve_alert(Monitor_system* sys,int field_id,const char* alert_type){
     // 1. 入参合法性校验
     if (sys == NULL) {
-        perror("Failed to allocate MonitorSystem");
+        perror("系统管理结构体内存分配失败");
         return -1;
     }
     if (field_id <= 0 || alert_type == NULL || strlen(alert_type) == 0) {
@@ -1302,10 +1433,10 @@ int resolve_alert(MonitorSystem* sys,int field_id,const char* alert_type){
     }
     return resolved_count;	
 }
-int get_alert_count(MonitorSystem* sys,int field_id){
+int get_alert_count(Monitor_system* sys,int field_id){
     // 1. 入参合法性校验
     if (sys == NULL) {
-        perror("Failed to allocate MonitorSystem");
+        perror("系统管理结构体内存分配失败");
         return -1; // 返回-1标识错误
     }
     if (field_id <= 0) {
@@ -1333,6 +1464,7 @@ int get_alert_count(MonitorSystem* sys,int field_id){
 }
 //辅助函数
 void display_field_menu(void) {
+    clear_screen();
     print_menu_separator();
     print_center_title("实验田管理");
     print_menu_separator();
@@ -1351,64 +1483,69 @@ void field_management(void){
 	
 	while(1){
 		display_field_menu();
-		scanf("%d",&sub_choice);
+		scanf_s("%d",&sub_choice);
 		getchar();
 		
 	switch(sub_choice) {
 		    case 1: 
 		        printf("1. 添加新田块\n");
-		        add_field(g_sys,"东区实验田1号","张三");
-		        add_field(g_sys,"西区实验田2号","李四");
-		        add_field(g_sys,"南区实验田3号","王五");
-		        add_field(g_sys,"北区实验田4号","赵六");
-		        add_field(g_sys,"中区实验田5号","钱七");
+		        add_field(sys,"东区实验田1号","张三");
+		        add_field(sys,"西区实验田2号","李四");
+		        add_field(sys,"南区实验田3号","王五");
+		        add_field(sys,"北区实验田4号","赵六");
+		        add_field(sys,"中区实验田5号","钱七");
+                pause_console();
 		        break;
 		        
 		    case 2: 
 		        printf("2. 显示所有田块\n");
-		        display_all_fields(g_sys);
+		        display_all_fields(sys);
+                pause_console();
 		        break;
 		        
 		    case 3: {
 		    	int field_id;
 		        printf("3. 查找田块(按ID)\n");
 		        printf("请输入要查找的ID");
-				scanf("%d",&field_id);
+				scanf_s("%d",&field_id);
 				getchar();
-				Field* p=find_field_by_id(g_sys,field_id);
+				Field* p=find_field_by_id(sys,field_id);
 				if(p!=NULL){
 					printf("找到匹配实验田,ID为%d, 名称为%s 管理人为%s 传感器数为%d\n",p->id,p->name,p->manager,p->sensor_count);
 					}else{
 						printf("未找到ID为%d的田块！\n", field_id);
 						}
-		        
+                pause_console();
 		        break;}
 		    case 4: 
 		    	char name[30];
 		        printf("4. 搜索田块(按名称)\n");
 		        printf("请输入要查找的田块名称(模糊匹配)；");
-		        scanf("%s",name);
+		        scanf_s("%s",name);
 		        getchar();
-		        search_fields_by_name(g_sys,name);
+		        search_fields_by_name(sys,name);
+                pause_console();
 		        break;
 		        
 		    case 5: 
 		    	char manager[20];
 		        printf("5. 搜索田块(按负责人模糊匹配)\n");
 		        printf("请输入要查找的田块管理员；");
-		        scanf("%s",manager);
+		        scanf_s("%s",manager);
 				getchar();
-				search_fields_by_manager(g_sys,manager);
+				search_fields_by_manager(sys,manager);
+                pause_console();
 		        break;
 		        
 		    case 6:{
 		    	int field_id;
 		    	printf("6. 删除田块\n");
 		    	printf("请输入要清除的田块：");
-		    	scanf("%d",&field_id);
+		    	scanf_s("%d",&field_id);
 		    	getchar();
-		    	delete_field(g_sys,field_id);
+		    	delete_field(sys,field_id);
 		    	printf("已清除ID为%d田块\n",field_id);
+                pause_console();
 		    	break;}
 		    case 0: 
 		
@@ -1416,12 +1553,14 @@ void field_management(void){
 		        
 		    default:
 		        printf("\n请输入有效的数字!\n\n");
+                pause_console();
 		        break;
 			}
 			
 	}   
 }
 void display_sensor_record_menu(void){
+    clear_screen();
     print_menu_separator();
     print_center_title("传感器管理");
     print_menu_separator();
@@ -1439,7 +1578,7 @@ void sensor_record_management(void){
 	int sub_choice;
 	while(1){
 		display_sensor_record_menu();
-		scanf("%d",&sub_choice);
+		scanf_s("%d",&sub_choice);
 		getchar();
 	switch(sub_choice) {
 		case 1: {
@@ -1447,9 +1586,10 @@ void sensor_record_management(void){
 			float temperature,humidity;
 			printf("1. 添加传感器记录 \n");	
 			printf("请输入ID,温度,湿度\n");
-			scanf("%d%f%f",&field_id,&temperature,&humidity);
+			scanf_s("%d%f%f",&field_id,&temperature,&humidity);
 			getchar();
-			add_sensor_record(g_sys,field_id,temperature,humidity);       
+			add_sensor_record(sys,field_id,temperature,humidity);   
+            pause_console();
 	        break;}
 				        
 		case 2: {
@@ -1457,27 +1597,30 @@ void sensor_record_management(void){
 			int count;
 			printf("2. 显示最新记录\n");
 			printf("请输入ID,显示条数\n");
-			scanf("%d%d",&field_id,&count);
+			scanf_s("%d%d",&field_id,&count);
 			getchar();
-			display_latest_records(g_sys,field_id,count);	        
+			display_latest_records(sys,field_id,count);	 
+            pause_console();
 			break;}
 				        
 		case 3: {
 			int field_id;
 			printf("3. 显示所有记录 \n");
 			printf("请输入ID\n");
-			scanf("%d",&field_id);
+			scanf_s("%d",&field_id);
 			getchar();
-			display_field_all_records(g_sys,field_id);	        
+			display_field_all_records(sys,field_id);	 
+            pause_console();
 			break;}
 				        
 		case 4: {
 			int days;
 			printf("4. 删除过期记录\n");
 			printf("请输入保留最近几天的数据\n");
-			scanf("%d",&days);
+			scanf_s("%d",&days);
 			getchar();
-			delete_old_records(g_sys,days);	        
+			delete_old_records(sys,days);	        
+            pause_console();
 			break;}
 				        
 		case 5: {
@@ -1485,19 +1628,21 @@ void sensor_record_management(void){
 			int count;
 			printf("5. 获取记录数量\n");
 			printf("请输入ID\n");
-			scanf("%d",&field_id);
+			scanf_s("%d",&field_id);
 			getchar();
-			count=get_record_count(g_sys,field_id);
+			count=get_record_count(sys,field_id);
 			printf("记录数量为%d\n",count);
+            pause_console();
 			break;}
 			
 		case 6:{
 			int field_id;
 			printf("6. 计算平均温度\n");
 			printf("请输入ID\n");
-			scanf("%d",&field_id);
+			scanf_s("%d",&field_id);
 			getchar();
-			calculate_avg_temperature(g_sys,field_id);
+			calculate_avg_temperature(sys,field_id);
+            pause_console();
 			break;}
 				        
 		case 0: 
@@ -1505,63 +1650,70 @@ void sensor_record_management(void){
 			return;
 				        
 		default:
-			printf("\n请输入有效的数字!\n\n");	        
+			printf("\n请输入有效的数字!\n\n");	     
+            pause_console();
 			break;
 					}
 	}
 }
 void display_data_query(void){
-		print_menu_separator();
-        print_center_title("数据查询与统计");
-	    print_menu_separator();
-	    printf("1. 查找异常记录 \n");
-	    printf("2. 查找极值\n");
-	    printf("3. 分析趋势 \n");
-	    printf("0. 返回主菜单\n");
-	    print_menu_separator();
-	    printf("请选择(0-3):");
+    clear_screen();
+	print_menu_separator();
+    print_center_title("数据查询与统计");
+	print_menu_separator();
+	printf("1. 查找异常记录 \n");
+	printf("2. 查找极值\n");
+	printf("3. 分析趋势 \n");
+	printf("0. 返回主菜单\n");
+	print_menu_separator();
+	printf("请选择(0-3):");
 }
 void data_management(void){
 	int sub_choice;
 	while(1){
 		display_data_query();
-		scanf("%d",&sub_choice);
+		scanf_s("%d",&sub_choice);
 		getchar();
 		switch(sub_choice){
 			case 1:{
 				int field_id;
 				printf("1. 查找异常记录 \n");
 				printf("请输入ID\n");
-				scanf("%d",&field_id);
+				scanf_s("%d",&field_id);
 				getchar();
-				find_abnormal_records(g_sys,field_id);
+				find_abnormal_records(sys,field_id);
+                pause_console();
 				break;}
 			case 2:{
 				int field_id;
 				printf("2. 查找极值\n");
 				printf("请输入ID\n");
-				scanf("%d",&field_id);
+				scanf_s("%d",&field_id);
 				getchar();
-				find_extreme_values(g_sys,field_id);
+				find_extreme_values(sys,field_id);
+                pause_console();
 				break;}
 			case 3:{
 				int field_id;
 				printf("3. 分析趋势 \n");
 				printf("请输入ID\n");
-				scanf("%d",&field_id);
+				scanf_s("%d",&field_id);
 				getchar();
-				analyze_trend(g_sys,field_id);
+				analyze_trend(sys,field_id);
+                pause_console();
 				break;}
 			case 0:
 				
 				return;
 			default:
 				printf("\n请输入有效的数字!\n\n");
+                pause_console();
 				break;	
 		}
 	}
 }
 void display_alert(void){
+    clear_screen();
 	print_menu_separator();
     print_center_title("告警管理");
 	print_menu_separator();
@@ -1578,56 +1730,63 @@ void alert_management(void){
 	int sub_choice;
 	while(1){
 		display_alert();
-		scanf("%d",&sub_choice);
+		scanf_s("%d",&sub_choice);
 		getchar();
 		switch(sub_choice){
 			case 1:{
 				int field_id;
 				printf("1. 检查并生成告警 \n");
 				printf("请输入ID\n");
-				scanf("%d",&field_id);
+				scanf_s("%d",&field_id);
 				getchar();
-				check_and_generate_alerts(g_sys,field_id);
+				check_and_generate_alerts(sys,field_id);
+                pause_console();
 				break;}
 			case 2:
 				printf("2. 显示所有告警\n");
-				display_all_alerts(g_sys);
+				display_all_alerts(sys);
+                pause_console();
 				break;
 			case 3:{
 				int field_id;
 				char alert_type[20];
 				printf("3. 处理告警 \n");
 				printf("请输入ID,告警类型\n");
-				scanf("%d%s",&field_id,alert_type);
+				scanf_s("%d%s",&field_id,alert_type);
 				getchar();
-				resolve_alert(g_sys,field_id,alert_type);
+				resolve_alert(sys,field_id,alert_type);
+                pause_console();
 				break;}
 			case 4:{
 				int field_id;
 				printf("4. 统计告警数量 \n");
 				printf("请输入ID\n");
-				scanf("%d",&field_id);
+				scanf_s("%d",&field_id);
 				getchar();
-				get_alert_count(g_sys,field_id);
+				get_alert_count(sys,field_id);
+                pause_console();
 				break;}
 			case 5:{
 				int field_id;
 				printf("5. 显示连续告警 \n");
 				printf("请输入ID\n");
-				scanf("%d",&field_id);
+				scanf_s("%d",&field_id);
 				getchar();
-				display_continuous_alerts(g_sys,field_id);
+				display_continuous_alerts(sys,field_id);
+                pause_console();
 				break;}
 			case 0:
 				
 				return;
 			default:
 				printf("\n请输入有效的数字!\n\n");
+                pause_console();
 				break;					
 		}
 	}
 }
 void display_system(void){
+    clear_screen();
     print_menu_separator();
     print_center_title("系统信息管理");
     print_menu_separator();
@@ -1642,33 +1801,37 @@ void system_management(void){
 	int sub_choice;
 		while(1){
 			display_system();
-			scanf("%d",&sub_choice);
+			scanf_s("%d",&sub_choice);
 			getchar();
 			switch(sub_choice){
 				case 1:{
-					printf("1. 当前田块数量为%d \n",g_sys->field_count);
+					printf("1. 当前田块数量为%d \n",sys->field_count);
+                    pause_console();
 					break;}
 				case 2:
-					printf("2. 数组容量为%d \n",g_sys->field_capacity);
+					printf("2. 数组容量为%d \n",sys->field_capacity);
+                    pause_console();
 					break;
 				case 3:
 					printf("计科252陆奕君\n");
+                    pause_console();
 					break;
 				case 0:
 					
 					return;
 				default:
 					printf("\n请输入有效的数字!\n\n");
+                    pause_console();
 					break;					
 			}
 		}
 }
 int main(){
-	g_sys = create_monitor_system();
+	sys = create_monitor_system();
 	int main_choice;
 	while(1){ 
 		display_main_menu();
-		scanf("%d", &main_choice);
+		scanf_s("%d", &main_choice);
 		getchar();
 		
 	switch(main_choice) {
@@ -1694,7 +1857,7 @@ int main(){
 	        
 	    case 0: // 退出系统
 	    
-	        destroy_monitor_system(g_sys);
+	        destroy_monitor_system();
 	        return 0;
 	        
 	    default:
