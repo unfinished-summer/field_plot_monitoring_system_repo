@@ -147,7 +147,10 @@ static void clear_screen(void)
 static void pause_console(void)
 {
     printf("\n按回车键返回菜单...");
-    getchar();
+    {
+        int _ch;
+        while ((_ch = getchar()) != '\n' && _ch != EOF) {}
+    }
 }
 
 // 打印菜单分隔线，统一宽度
@@ -1483,8 +1486,11 @@ void field_management(void){
 	
 	while(1){
 		display_field_menu();
-		scanf_s("%d",&sub_choice);
-		getchar();
+        scanf_s("%d",&sub_choice);
+        {
+            int _ch;
+            while ((_ch = getchar()) != '\n' && _ch != EOF) { }
+        }
 		
 	switch(sub_choice) {
 		    case 1: 
@@ -1507,8 +1513,11 @@ void field_management(void){
 		    	int field_id;
 		        printf("3. 查找田块(按ID)\n");
 		        printf("请输入要查找的ID");
-				scanf_s("%d",&field_id);
-				getchar();
+                scanf_s("%d",&field_id);
+                {
+                    int _ch;
+                    while ((_ch = getchar()) != '\n' && _ch != EOF) { }
+                }
 				Field* p=find_field_by_id(sys,field_id);
 				if(p!=NULL){
 					printf("找到匹配实验田,ID为%d, 名称为%s 管理人为%s 传感器数为%d\n",p->id,p->name,p->manager,p->sensor_count);
@@ -1521,8 +1530,11 @@ void field_management(void){
 		    	char name[30];
 		        printf("4. 搜索田块(按名称)\n");
 		        printf("请输入要查找的田块名称(模糊匹配)；");
-		        scanf_s("%s",name);
-		        getchar();
+        scanf_s("%29s", name, (unsigned)sizeof(name));
+        {
+            int _ch;
+            while ((_ch = getchar()) != '\n' && _ch != EOF) { }
+        }
 		        search_fields_by_name(sys,name);
                 pause_console();
 		        break;
@@ -1531,8 +1543,11 @@ void field_management(void){
 		    	char manager[20];
 		        printf("5. 搜索田块(按负责人模糊匹配)\n");
 		        printf("请输入要查找的田块管理员；");
-		        scanf_s("%s",manager);
-				getchar();
+        scanf_s("%19s", manager, (unsigned)sizeof(manager));
+                {
+                    int _ch;
+                    while ((_ch = getchar()) != '\n' && _ch != EOF) { }
+                }
 				search_fields_by_manager(sys,manager);
                 pause_console();
 		        break;
@@ -1541,8 +1556,11 @@ void field_management(void){
 		    	int field_id;
 		    	printf("6. 删除田块\n");
 		    	printf("请输入要清除的田块：");
-		    	scanf_s("%d",&field_id);
-		    	getchar();
+            scanf_s("%d",&field_id);
+            {
+                int _ch;
+                while ((_ch = getchar()) != '\n' && _ch != EOF) { }
+            }
 		    	delete_field(sys,field_id);
 		    	printf("已清除ID为%d田块\n",field_id);
                 pause_console();
@@ -1578,16 +1596,22 @@ void sensor_record_management(void){
 	int sub_choice;
 	while(1){
 		display_sensor_record_menu();
-		scanf_s("%d",&sub_choice);
-		getchar();
+        scanf_s("%d",&sub_choice);
+        {
+            int _ch;
+            while ((_ch = getchar()) != '\n' && _ch != EOF) { }
+        }
 	switch(sub_choice) {
 		case 1: {
 			int field_id;
 			float temperature,humidity;
 			printf("1. 添加传感器记录 \n");	
 			printf("请输入ID,温度,湿度\n");
-			scanf_s("%d%f%f",&field_id,&temperature,&humidity);
-			getchar();
+            scanf_s("%d%f%f",&field_id,&temperature,&humidity);
+            {
+                int _ch;
+                while ((_ch = getchar()) != '\n' && _ch != EOF) { }
+            }
 			add_sensor_record(sys,field_id,temperature,humidity);   
             pause_console();
 	        break;}
@@ -1597,8 +1621,11 @@ void sensor_record_management(void){
 			int count;
 			printf("2. 显示最新记录\n");
 			printf("请输入ID,显示条数\n");
-			scanf_s("%d%d",&field_id,&count);
-			getchar();
+            scanf_s("%d%d",&field_id,&count);
+            {
+                int _ch;
+                while ((_ch = getchar()) != '\n' && _ch != EOF) { }
+            }
 			display_latest_records(sys,field_id,count);	 
             pause_console();
 			break;}
@@ -1607,8 +1634,11 @@ void sensor_record_management(void){
 			int field_id;
 			printf("3. 显示所有记录 \n");
 			printf("请输入ID\n");
-			scanf_s("%d",&field_id);
-			getchar();
+            scanf_s("%d",&field_id);
+            {
+                int _ch;
+                while ((_ch = getchar()) != '\n' && _ch != EOF) { }
+            }
 			display_field_all_records(sys,field_id);	 
             pause_console();
 			break;}
@@ -1617,8 +1647,11 @@ void sensor_record_management(void){
 			int days;
 			printf("4. 删除过期记录\n");
 			printf("请输入保留最近几天的数据\n");
-			scanf_s("%d",&days);
-			getchar();
+            scanf_s("%d",&days);
+            {
+                int _ch;
+                while ((_ch = getchar()) != '\n' && _ch != EOF) { }
+            }
 			delete_old_records(sys,days);	        
             pause_console();
 			break;}
@@ -1628,8 +1661,11 @@ void sensor_record_management(void){
 			int count;
 			printf("5. 获取记录数量\n");
 			printf("请输入ID\n");
-			scanf_s("%d",&field_id);
-			getchar();
+            scanf_s("%d",&field_id);
+            {
+                int _ch;
+                while ((_ch = getchar()) != '\n' && _ch != EOF) { }
+            }
 			count=get_record_count(sys,field_id);
 			printf("记录数量为%d\n",count);
             pause_console();
@@ -1639,8 +1675,11 @@ void sensor_record_management(void){
 			int field_id;
 			printf("6. 计算平均温度\n");
 			printf("请输入ID\n");
-			scanf_s("%d",&field_id);
-			getchar();
+        scanf_s("%d",&field_id);
+        {
+            int _ch;
+            while ((_ch = getchar()) != '\n' && _ch != EOF) { }
+        }
 			calculate_avg_temperature(sys,field_id);
             pause_console();
 			break;}
@@ -1672,15 +1711,21 @@ void data_management(void){
 	int sub_choice;
 	while(1){
 		display_data_query();
-		scanf_s("%d",&sub_choice);
-		getchar();
+        scanf_s("%d",&sub_choice);
+        {
+            int _ch;
+            while ((_ch = getchar()) != '\n' && _ch != EOF) { }
+        }
 		switch(sub_choice){
 			case 1:{
 				int field_id;
 				printf("1. 查找异常记录 \n");
 				printf("请输入ID\n");
-				scanf_s("%d",&field_id);
-				getchar();
+                scanf_s("%d",&field_id);
+                {
+                    int _ch;
+                    while ((_ch = getchar()) != '\n' && _ch != EOF) { }
+                }
 				find_abnormal_records(sys,field_id);
                 pause_console();
 				break;}
@@ -1688,8 +1733,11 @@ void data_management(void){
 				int field_id;
 				printf("2. 查找极值\n");
 				printf("请输入ID\n");
-				scanf_s("%d",&field_id);
-				getchar();
+                scanf_s("%d",&field_id);
+                {
+                    int _ch;
+                    while ((_ch = getchar()) != '\n' && _ch != EOF) { }
+                }
 				find_extreme_values(sys,field_id);
                 pause_console();
 				break;}
@@ -1697,8 +1745,11 @@ void data_management(void){
 				int field_id;
 				printf("3. 分析趋势 \n");
 				printf("请输入ID\n");
-				scanf_s("%d",&field_id);
-				getchar();
+                scanf_s("%d",&field_id);
+                {
+                    int _ch;
+                    while ((_ch = getchar()) != '\n' && _ch != EOF) { }
+                }
 				analyze_trend(sys,field_id);
                 pause_console();
 				break;}
@@ -1730,15 +1781,21 @@ void alert_management(void){
 	int sub_choice;
 	while(1){
 		display_alert();
-		scanf_s("%d",&sub_choice);
-		getchar();
+        scanf_s("%d",&sub_choice);
+        {
+            int _ch;
+            while ((_ch = getchar()) != '\n' && _ch != EOF) { }
+        }
 		switch(sub_choice){
 			case 1:{
 				int field_id;
 				printf("1. 检查并生成告警 \n");
 				printf("请输入ID\n");
-				scanf_s("%d",&field_id);
-				getchar();
+                scanf_s("%d",&field_id);
+                {
+                    int _ch;
+                    while ((_ch = getchar()) != '\n' && _ch != EOF) { }
+                }
 				check_and_generate_alerts(sys,field_id);
                 pause_console();
 				break;}
@@ -1752,8 +1809,11 @@ void alert_management(void){
 				char alert_type[20];
 				printf("3. 处理告警 \n");
 				printf("请输入ID,告警类型\n");
-				scanf_s("%d%s",&field_id,alert_type);
-				getchar();
+                scanf_s("%d%19s", &field_id, alert_type, (unsigned)sizeof(alert_type));
+                {
+                    int _ch;
+                    while ((_ch = getchar()) != '\n' && _ch != EOF) { }
+                }
 				resolve_alert(sys,field_id,alert_type);
                 pause_console();
 				break;}
@@ -1761,8 +1821,11 @@ void alert_management(void){
 				int field_id;
 				printf("4. 统计告警数量 \n");
 				printf("请输入ID\n");
-				scanf_s("%d",&field_id);
-				getchar();
+                scanf_s("%d",&field_id);
+                {
+                    int _ch;
+                    while ((_ch = getchar()) != '\n' && _ch != EOF) { }
+                }
 				get_alert_count(sys,field_id);
                 pause_console();
 				break;}
@@ -1770,8 +1833,11 @@ void alert_management(void){
 				int field_id;
 				printf("5. 显示连续告警 \n");
 				printf("请输入ID\n");
-				scanf_s("%d",&field_id);
-				getchar();
+                scanf_s("%d",&field_id);
+                {
+                    int _ch;
+                    while ((_ch = getchar()) != '\n' && _ch != EOF) { }
+                }
 				display_continuous_alerts(sys,field_id);
                 pause_console();
 				break;}
@@ -1801,8 +1867,11 @@ void system_management(void){
 	int sub_choice;
 		while(1){
 			display_system();
-			scanf_s("%d",&sub_choice);
-			getchar();
+            scanf_s("%d",&sub_choice);
+            {
+                int _ch;
+                while ((_ch = getchar()) != '\n' && _ch != EOF) { }
+            }
 			switch(sub_choice){
 				case 1:{
 					printf("1. 当前田块数量为%d \n",sys->field_count);
@@ -1831,8 +1900,11 @@ int main(){
 	int main_choice;
 	while(1){ 
 		display_main_menu();
-		scanf_s("%d", &main_choice);
-		getchar();
+        scanf_s("%d", &main_choice);
+        {
+            int _ch;
+            while ((_ch = getchar()) != '\n' && _ch != EOF) { }
+        }
 		
 	switch(main_choice) {
 	    case 1: // 实验田管理
