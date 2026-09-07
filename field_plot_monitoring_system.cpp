@@ -1813,7 +1813,7 @@ void system_management(void){
                     pause_console();
 					break;
 				case 3:
-					printf("计科252陆奕君\n");
+					printf("3. 版权信息:陆奕君\n");
                     pause_console();
 					break;
 				case 0:
